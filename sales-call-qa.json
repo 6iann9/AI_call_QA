@@ -1,0 +1,1698 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        80
+      ],
+      "id": "a4c6f40c-516e-4ae6-9d9b-955935115f7c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $now }}",
+        "format": "yyyy-MM-dd",
+        "outputFieldName": "curDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        80
+      ],
+      "id": "6de71552-8b59-4059-9d77-0e6a13df0c64",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "url": "https://api.ringostat.net/calls/list",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "export_type",
+              "value": "json"
+            },
+            {
+              "name": "from",
+              "value": "={{ $('Date & Time2').item.json.curDate }} 00:00:00"
+            },
+            {
+              "name": "to",
+              "value": "={{ $('Date & Time2').item.json.curDate }} 08:30:00"
+            },
+            {
+              "name": "fields",
+              "value": "calldate,caller,dst,connected_with,employee_fio,department,disposition,call_type,duration,billsec,waittime,has_recording,recording_wav,recording,uniqueid,call_card,pool_name,scheme_name,caller_number,missing_reason,who_missed,proper_flag,repeated_flag,call_counter,category_mark,category_number,employee_number,employee_mark,utm_source,utm_medium,utm_campaign,utm_content,utm_term,client_id,remote_ip,refferrer,landing,additional_number,csat_survey_name,csat_survey,csat_rating,duration_ms"
+            }
+          ]
+        },
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        80
+      ],
+      "id": "9e4c433e-246a-42b2-853c-8e4f38bc4a93",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1664,
+        80
+      ],
+      "id": "a4b16e3b-c09b-4eae-9f67-406d10f428db",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2f540a45-3f1d-4824-968a-c460cee7bc19",
+              "leftValue": "={{ $json.recording }}",
+              "rightValue": "N",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2b6f917e-1e67-48c0-b6b7-84681e1c09fd",
+              "leftValue": "={{ $json.duration }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "76b4bdc9-51ba-42b5-a4ba-b36cd0f1bd51",
+              "leftValue": "={{ $json.employee_fio }}",
+              "rightValue": "REPLACE_WITH_EXCLUDED_EMPLOYEE_LABEL",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1456,
+        80
+      ],
+      "id": "c1aaf2e0-a69c-4908-9816-e6d7712c4e57",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "subtractFromDate",
+        "magnitude": "={{ $json.curDate }}",
+        "duration": 1,
+        "outputFieldName": "curDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        80
+      ],
+      "id": "f3651c89-8f9e-44d3-a569-6d2ee4a479a1",
+      "name": "Date & Time1"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.curDate }}",
+        "format": "yyyy-MM-dd",
+        "outputFieldName": "curDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        112,
+        80
+      ],
+      "id": "9e5f269e-3bf7-463f-9f83-1393e395e533",
+      "name": "Date & Time2"
+    },
+    {
+      "parameters": {
+        "audioUrl": "={{ $json.recording }}",
+        "additionalFields": {
+          "language_code": "ru",
+          "language_detection": false,
+          "multichannel": true,
+          "punctuate": true
+        }
+      },
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        0
+      ],
+      "id": "f011b70c-e652-4426-a842-794a8074e9b9",
+      "name": "Create a transcription"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2336,
+        0
+      ],
+      "id": "763049ae-b78d-4b55-923d-8f9433182ffd",
+      "name": "Wait"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "transcriptId": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        0
+      ],
+      "id": "f53c763d-da35-43d7-8196-92c3427cb28d",
+      "name": "Get a transcription"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "utterances",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        0
+      ],
+      "id": "c2afd431-073a-401d-8565-b85a9c9d8ff0",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "callTranscriptRU",
+        "include": "specifiedFields",
+        "fieldsToInclude": "channel, text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        0
+      ],
+      "id": "0c1daa5a-cdfb-4798-8801-9ba9cc6403b2",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "audioUrl": "={{ $json.recording }}",
+        "additionalFields": {
+          "language_code": "uk",
+          "language_detection": false,
+          "multichannel": true,
+          "punctuate": true
+        }
+      },
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        208
+      ],
+      "id": "6a6cd50f-2366-4bfe-a9b2-bd064e641f5d",
+      "name": "Create a transcription1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "transcriptId": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        208
+      ],
+      "id": "01b13445-e861-49f2-a182-6fd8dff85dd8",
+      "name": "Get a transcription1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "utterances",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        208
+      ],
+      "id": "3d5b4187-1367-4853-baff-74370850c08c",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "callTranscriptUA",
+        "include": "specifiedFields",
+        "fieldsToInclude": "channel, text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        208
+      ],
+      "id": "094311b4-9ce5-4b59-97a4-ea2f6754dd0a",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3344,
+        208
+      ],
+      "id": "9210c358-a5ef-4c98-bdd4-f30a025d3e91",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты — эксперт по анализу и контролю качества обслуживания сети магазинов мясной и гриль-продукции «ВАШ БРЕНД».\n\nТебе передаётся УПОРЯДОЧЕННЫЙ массив телефонных звонков.\n\nКаждый элемент массива — один отдельный звонок и содержит:\n\n* row_number — служебный номер исходной строки;\n* callTranscriptUA — транскрипцию звонка на украинском;\n* callTranscriptRU — транскрипцию того же звонка на русском.\n\nТвоя задача — оценить ИСКЛЮЧИТЕЛЬНО работу продавца по указанным ниже критериям.\n\nСТРОГИЙ ТЕРМИНОЛОГИЧЕСКИЙ СТАНДАРТ:\n\n1. Запрещено использовать слово «клиент» в комментариях и описаниях. Используй ТОЛЬКО слово «покупатель».\n2. Сеть не продаёт «готовое мясо». Продаются сырые/маринованные мясные продукты + услуга жарки на мангале, по актуальному тарифу вашей сети.\n\n────────────────────────────\nКРИТИЧЕСКОЕ ПРАВИЛО ПОРЯДКА\n────────────────────────────\n\nОбрабатывай звонки СТРОГО в том порядке, в котором они находятся во входном массиве.\n\nДля каждого входного элемента создай РОВНО один объект оценки.\n\nСоответствие должно быть строго позиционным:\n\nresults[0] = оценка первого входного звонка\nresults[1] = оценка второго входного звонка\nresults[2] = оценка третьего входного звонка\nи так далее.\n\nЗАПРЕЩЕНО:\n\n* сортировать звонки по row_number;\n* менять порядок звонков;\n* пропускать звонки;\n* объединять несколько звонков;\n* создавать дубликаты;\n* создавать дополнительные результаты;\n* возвращать row_number;\n* возвращать calldate;\n* возвращать employee_fio;\n* возвращать dst;\n* копировать любые другие метаданные.\n\nrow_number используется только как внутренний ориентир при анализе. НЕ возвращай его в результате.\n\nКоличество объектов в results должно ТОЧНО совпадать с количеством элементов во входном массиве.\n\nПеред завершением внутренне проверь:\n\nколичество входных звонков = количество объектов results.\n\n────────────────────────────\nПРАВИЛА АНАЛИЗА ТРАНСКРИПЦИЙ\n────────────────────────────\n\nКаждый звонок содержит ДВЕ транскрипции ОДНОГО И ТОГО ЖЕ аудио:\n\n* callTranscriptUA — распознавание речи на украинском языке;\n* callTranscriptRU — распознавание речи на русском языке.\n\nОбе версии могут содержать ошибки ASR.\n\nАнализируй ОБЕ версии одновременно и воссоздавай наиболее вероятный реальный смысл разговора по контексту.\n\nРазличия между callTranscriptUA и callTranscriptRU НЕ являются ошибкой продавца.\n\nРусскоязычная транскрипция callTranscriptRU НЕ является доказательством того, что продавец говорил по-русски.\n\nКаналы:\n\n* channel 1 — продавец;\n* channel 2 — покупатель.\n\nОценивай ТОЛЬКО channel 1.\n\nРечь покупателя учитывай только для понимания контекста: что он просил, от чего отказался, задавал ли вопросы, была ли жалоба, оформлялся ли заказ и т. д.\n\nНе приписывай продавцу слова покупателя.\n\n────────────────────────────\nДОПУСТИМЫЕ ОЦЕНКИ\n────────────────────────────\n\nДля всех 10 критериев используй строго один из четырёх вариантов:\n\n* \"да\"\n* \"частично\"\n* \"нет\"\n* \"неприменимо\"\n\n────────────────────────────\n\n1. украинский_язык\n   ────────────────────────────\n\nСтандарт: весь диалог от приветствия до прощания обязан вестись исключительно на украинском языке.\n\nПриветствие должно содержать бренд и точку, например:\n«Добрий ранок, \"Ваш бренд\" [ваша точка], я вас слухаю».\n\nПрощание обязательно на украинском:\n«Дякуємо, гарного дня, будемо чекати на вас».\n\n\"да\":\nВесь разговор прошёл на украинском языке.\n\n\"частично\":\nПродавец преимущественно говорит по-украински, но допустил отдельные русские слова/суржик, например:\n«да», «пока что», «какой».\n\n\"нет\":\nПродавец переходит на русский язык или ведёт на нём заметную/основную часть диалога.\n\n\"неприменимо\":\nДиалог не состоялся: сброс, тишина.\n\nВАЖНО:\nЛюбое вероятное проявление русского языка продавцом обязательно вынеси в поле комментарий для ручной перепроверки супервайзером.\n\nНе делай вывод о русском языке только на основании callTranscriptRU.\n\n────────────────────────────\n2. допродажа\n────────────────────────────\n\nСтандарт: инициативное предложение товаров продавцом.\n\nНе считаются допродажей:\n\n* «Что-то ещё?»;\n* «Это всё?»;\n* добавления товаров, инициатором которых стал сам покупатель.\n\nПравило 3 отказов:\nПродавец должен стремиться сделать 1–2 предложения, допустимо до 3. Если покупатель 3 раза отказался — дальнейшее предложение прекращается.\n\nКлассификация предложений:\n\nа) Дополнительные товары, требующие готовки:\n\n* овощи гриль: кукуруза, перец, грибы;\n* картошка гриль/смокер;\n* курочка гриль;\n* сыр сулугуни на мангале;\n* нарезка;\n* продукция смокер;\n* продукция фритюр.\n\nПредлагаются в первую очередь.\n\nб) Сопутствующие товары:\n\n* фирменные соусы;\n* лаваш армянский / матнакаш;\n* напитки.\n\nПредлагаются во 2–3 очередь или перед сверкой.\n\n\"да\":\nПродавец сам предложил 1–2 конкретных дополнительных или сопутствующих товара, даже если покупатель отказался.\n\nДаже если покупатель сам сформировал большой заказ, продавец обязан предложить позицию из ассортимента.\n\n\"частично\":\nПредложение сделано неуверенно или предложена абстрактная категория без конкретных позиций.\n\n\"нет\":\nПродавец не предложил ни одного товара ИЛИ ограничился общим вопросом «Что-то ещё?».\n\n\"неприменимо\":\nЗвонок-консультация без заказа либо отмена заказа на начальном этапе.\n\n────────────────────────────\n3. презентация_товара\n────────────────────────────\n\nСтандарт: добавление «сочности», аппетитных деталей и пользы к товарам при их предложении или при вопросах покупателя.\n\n\"да\":\nПродавец описывает свойства товара.\n\nПримеры:\n«Кукуруза с дымком, очень вкусная».\n«Ошеек сочный, с жирком, а мякоть более постная, но может быть чуть суше».\n\nОтветы на вопросы покупателя с пояснением особенностей мяса — жирок, ужарка, мягкость и т. п. — также засчитываются за презентацию.\n\n\"частично\":\nПродавец назвал позицию, но описал её сухо и скупо.\n\n\"нет\":\nНа вопрос покупателя, например «А какое мясо сочнее?», продавец ответил сухо или некомпетентно:\n«Не знаю»,\n«Всё нормальное»\n\nИЛИ при вопросах покупателя просто перечислил названия без пояснения.\n\n\"неприменимо\":\nПокупатель чётко знал свой заказ, вопросов не задавал, консультация не требовалась.\n\n────────────────────────────\n4. уточнение_веса\n────────────────────────────\n\nСтандарт: обязательное информирование покупателя о том, что сеть работает с сырой продукцией и при жарке происходит усадка/ужарка примерно 30–40%.\n\nПример:\n\nПри заказе 2.8 кг сырого ошейка на выходе получится около 2.0 кг готового продукта.\n\n\"да\":\nПродавец озвучил, что расчёт идёт по сырому весу, и предупредил о потере веса при приготовлении.\n\nЭто относится как к мясу, так и к другим весовым блюдам на пожарку.\n\n\"частично\":\nПродавец уточнил сырой/готовый вес, но не объяснил нюанс ужарки.\n\n\"нет\":\nПродавец принял заказ на весовую пожарку, но никак не проговорил тему сырого веса и ужарки.\n\n\"неприменимо\":\n\n* заказ только штучных товаров: напитки, лаваш и т. п.;\n* заказ только сырого мяса без услуги жарки;\n* отмена заказа.\n\nПри покупке только сырого мяса без услуги жарки информирование про ужарку не требуется.\n\nИсключение:\nЕсли покупатель сам говорит:\n«Я знаю ваши правила, заказываю постоянно, не объясняйте»,\n\nоценка \"да\".\n\n────────────────────────────\n5. финальная_сверка\n────────────────────────────\n\nСтандарт: продавец обязан инициативно сказать:\n«Давайте сверим ваш заказ»\n\nи перечислить:\n\n* состав заказа;\n* номер заказа;\n* время готовности;\n* формат: самовывоз/доставка.\n\nОтношение к итоговой сумме:\n\nНазывать точную сумму СРАЗУ продавец НЕ обязан, поскольку сырой продукт ещё не взвешен.\n\nОтсутствие суммы при сверке само по себе НЕ является ошибкой.\n\nЕсли покупатель просит назвать сумму, продавец обязан предложить взвесить продукт во время сборки и перезвонить в течение 30 минут с точной ценой.\n\nСухой отказ:\n«Мы не знаем сумму, узнаете при получении»\nявляется нарушением.\n\n\"да\":\nПродавец провёл полную сверку:\n\n* состав;\n* номер заказа;\n* время;\n* адрес/самовывоз.\n\nЕсли покупатель просил сумму — продавец корректно сориентировал по перезвону.\n\n\"частично\":\nСверен только состав, но упущено время готовности и/или номер заказа.\n\n\"нет\":\nСверка заказа вообще не проводилась ИЛИ на вопрос о стоимости продавец ответил грубым/сухим отказом.\n\n\"неприменимо\":\nЗаказ не оформлялся.\n\n────────────────────────────\n6. данные_заказа\n────────────────────────────\n\nСтандарт: обязательная фиксация трёх параметров:\n\n1. Имя покупателя.\n2. Номер телефона.\n3. Время готовности/доставки.\n\nДанные берутся ВСЕГДА, даже если покупатель делает заказы часто.\n\n\"да\":\nПродавец выяснил/зафиксировал имя, контактный телефон и согласовал время.\n\n\"частично\":\nЗафиксированы только 2 параметра из 3.\n\nНапример, продавец забыл спросить имя.\n\n\"нет\":\nПродавец не взял контактные данные при оформлении заказа.\n\n\"неприменимо\":\nЗвонок не содержит оформления заказа/брони.\n\n────────────────────────────\n7. вежливость\n────────────────────────────\n\nСтандарт: соблюдение полного стандартизированного этикета.\n\nИспользование вежливых слов и формулировок:\n\n* «будь ласка»;\n* «вибачте»;\n* «пробачте»;\n* «не могли б ви».\n\nПриветствие обязано содержать бренд и точку:\n«Добрий ранок, \"Ваш бренд\" на [вашей точке]».\n\nПростое:\n«Алло»,\n«Да»,\n«Слушаю»\n\nявляется нарушением.\n\nЕсли необходимо переспросить, запрещены грубые формулировки:\n«Шо-шо?»,\n«Повторите».\n\nКорректный вариант:\n«Пробачте, будь ласка, поганий зв'язок, повторіть, будь ласка».\n\n\"да\":\nВсе нормы вежливости полностью соблюдены, тон уважительный и доброжелательный.\n\n\"частично\":\nТон суховатый, пропущены вежливые слова, например «пожалуйста»/«спасибо», но явно резких фраз не было.\n\n\"нет\":\nРезкий тон, хамство, перебивание, фразы:\n«А шо вы хотите?»,\n«Мы так не делаем»,\n\nлибо отсутствие приветствия/прощания.\n\n\"неприменимо\":\nНедопустимо.\n\nКритерий вежливости оценивается ВСЕГДА.\n\n────────────────────────────\n8. альтернатива_при_отказе\n────────────────────────────\n\nСтандарт: при отсутствии нужного товара или времени на мангале продавец ОБЯЗАН предложить альтернативу.\n\nВарианты альтернатив:\n\n1. Другое время или другое блюдо:\n\n* курочка гриль;\n* смокер;\n* другие позиции.\n\n2. Перенаправление на другой магазин сети.\n\nВ городах с несколькими магазинами предложи доступную точку по актуальным правилам вашей сети.\n\nРегиональное исключение:\n\nДля одиночных магазинов, где перенаправление невозможно, предлагается только альтернативная продукция или другое время.\n\n\"да\":\nПродавец предложил другое время, другой продукт или перенаправил в другой магазин сети.\n\nЕсли покупатель после этого отказался — продавец сделал всё возможное, оценка \"да\".\n\n\"частично\":\nПродавец предложил альтернативу только после настойчивых расспросов самого покупателя.\n\n\"нет\":\nПродавец просто ответил:\n«Нету»,\n«На 18:00 всё занято»,\n«Мы такие заказы не принимаем»\n\nбез попытки помочь.\n\n\"неприменимо\":\nОтказов и проблем с наличием/временем не возникало.\n\n────────────────────────────\n9. оперативность\n────────────────────────────\n\nСтандарт: заказ оформляется сразу во время текущего звонка.\n\nПросьба:\n«Перезвоните через 5–10 минут, у меня очередь на кассе»\n\nявляется ГРУБЫМ НАРУШЕНИЕМ, эквивалентным неуважению к покупателю.\n\nЕдинственное исключение для паузы:\n\nПродавец вежливо извиняется:\n«Пробачте, секундочку, зачекайте, будь ласка, великий об'єм покупців»,\n\nиспользует мьют, заканчивает текущую операцию, возвращается и говорит:\n\n«Дякую за очікування, що б ви хотіли замовити?»\n\nпосле чего продолжает диалог.\n\n\"да\":\nЗаказ принят оперативно ИЛИ пауза была правильно оформлена через вежливое извинение и мьют.\n\n\"частично\":\nПродавец долго искал информацию, заставляя покупателя ждать без предупреждения.\n\n\"нет\":\nПродавец попросил покупателя перезвонить позже из-за очереди в магазине или отложил оформление без уважительной причины.\n\n\"неприменимо\":\nПокупатель сам не готов оформлять заказ или звонок сорвался.\n\n────────────────────────────\n10. работа_с_недовольством\n────────────────────────────\n\nСтандарт: при жалобе/претензии покупателя главный приоритет — сохранить покупателя довольным.\n\nАлгоритм продавца:\n\n1. Принести искренние извинения за неудобства.\n\n2. Проявить заинтересованность и выяснить детали:\n\n* что именно не так с мясом;\n* сухое ли;\n* перепаленное ли;\n* есть ли фото;\n* другие важные обстоятельства.\n\n3. Предложить урегулирование за счёт магазина:\n\n* бесплатный соус;\n* бесплатная жарка;\n* бесплатный лаваш/матнакаш;\n\nИЛИ, если продавец не знает, как решить вопрос, сказать:\n\n«Пробачте, я уточню цей момент у керівництва, і ми вам передзвонимо»\n\nпосле чего передать дело управляющему.\n\n\"да\":\nПродавец извинился, детально расспросил о проблеме и предложил комплимент/решение от магазина ИЛИ передал дело управляющему с обещанным перезвоном.\n\n\"частично\":\nПродавец извинился, но не попытался вникнуть в проблему или предложить решение.\n\n\"нет\":\nПродавец спорит, доказывает правоту магазина, проявляет равнодушие или бросает трубку.\n\n\"неприменимо\":\nКонфликтов и претензий в звонке не было.\n\n────────────────────────────\nКОНТЕКСТ ПОКУПАТЕЛЯ\n────────────────────────────\n\nЕсли покупатель ведёт себя корректно:\n\n\"нет\"\n\nЕсли покупатель агрессивен, грубит, повышает тон или кричит:\n\nдай краткое фактическое описание в одном предложении без осуждения.\n\nПример:\n\n«Покупатель выражал резкое недовольство прожаркой мяса на повышенных тонах».\n\n────────────────────────────\nКОММЕНТАРИЙ\n────────────────────────────\n\nЕсли существенных замечаний нет:\n\n\"нет\"\n\nЕсли есть нарушения:\n\nкратко перечисли основные ошибки продавца.\n\nПример:\n\n«Использовал русский язык, не предложил допродажу, попросил перезвонить из-за очереди на кассе».\n\nКомментарий должен:\n\n* касаться только работы продавца;\n* быть кратким;\n* не пересказывать весь звонок;\n* не использовать слово «клиент»;\n* обязательно упоминать вероятное использование русского языка, если оно обнаружено.\n\n────────────────────────────\nTRANSCRIPT\n────────────────────────────\n\nВ поле transcript верни транскрипцию звонка, использованную для последующей идентификации и проверки результата.\n\nИспользуй callTranscriptUA как основную транскрипцию.\n\nВерни её БЕЗ изменения содержания.\n\nНе исправляй ASR-ошибки.\nНе переводи текст.\nНе сокращай текст.\nНе пересказывай текст.\nНе объединяй callTranscriptUA и callTranscriptRU.\n\nДля соответствующего входного звонка:\n\nresults[0].transcript = callTranscriptUA первого входного звонка\nresults[1].transcript = callTranscriptUA второго входного звонка\nresults[2].transcript = callTranscriptUA третьего входного звонка\nи так далее.\n\n────────────────────────────\nФИНАЛЬНАЯ ПРОВЕРКА\n────────────────────────────\n\nПеред отправкой результата проверь:\n\n1. Для каждого входного звонка существует ровно одна оценка.\n2. Порядок results полностью совпадает с порядком входного массива.\n3. Ничего не сортировалось по row_number.\n4. Никакой звонок не пропущен.\n5. Нет дубликатов.\n6. Количество results равно количеству входных элементов.\n7. В результатах отсутствуют row_number, calldate, employee_fio и dst.\n8. Оценивается только channel 1.\n9. callTranscriptUA и callTranscriptRU рассматриваются как две ASR-версии одного аудио.\n10. В комментариях нигде не используется слово «клиент».\n11. transcript является последним полем каждого объекта.\n12. transcript содержит исходный callTranscriptUA соответствующего звонка без изменений.\n\nВерни только данные через подключенный Structured Output Parser.\n\nНе добавляй никакой текст до или после результата.\n\n────────────────────────────\nВХОДНЫЕ ДАННЫЕ\n────────────────────────────\n\n{{ JSON.stringify($json.data) }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2720,
+        -560
+      ],
+      "id": "735e694d-04ea-4feb-8e8e-7bf93c0f61c1",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2720,
+        -320
+      ],
+      "id": "8b2ab906-7f55-4deb-a7c7-935cddfab2c7",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create CallData spreadsheet').item.json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "dialogues",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "calldate",
+              "displayName": "calldate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "employee_fio",
+              "displayName": "employee_fio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dst",
+              "displayName": "dst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "call_type",
+              "displayName": "call_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "duration",
+              "displayName": "duration",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "billsec",
+              "displayName": "billsec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "waittime",
+              "displayName": "waittime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recording",
+              "displayName": "recording",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "callTranscriptRU",
+              "displayName": "callTranscriptRU",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "callTranscriptUA",
+              "displayName": "callTranscriptUA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3712,
+        208
+      ],
+      "id": "1fa06f75-96c4-4557-ad14-b6fa03ac0b0f",
+      "name": "Append row in sheet"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1e3c2456-627e-486c-b33a-3ca6173f0b7f",
+              "name": "calldate",
+              "value": "={{ $('Filter').item.json.calldate }}",
+              "type": "string"
+            },
+            {
+              "id": "b51031a5-85a7-40f6-a9b0-1d3bb8b599b7",
+              "name": "employee_fio",
+              "value": "={{ $('Filter').item.json.employee_fio }}",
+              "type": "string"
+            },
+            {
+              "id": "4f468bd8-dc19-410c-ad3c-8c3b387f7442",
+              "name": "dst",
+              "value": "={{ $('Filter').item.json.dst }}",
+              "type": "string"
+            },
+            {
+              "id": "c05141cf-9fa5-4537-abd3-1626e9204e8b",
+              "name": "call_type",
+              "value": "={{ $('Filter').item.json.call_type }}",
+              "type": "string"
+            },
+            {
+              "id": "7364fd18-c5a1-4403-86e9-9ed6b4015eef",
+              "name": "duration",
+              "value": "={{ $('Filter').item.json.duration }}",
+              "type": "number"
+            },
+            {
+              "id": "2ba4d47e-47b8-40a4-a672-49d5d1468cf5",
+              "name": "billsec",
+              "value": "={{ $('Filter').item.json.billsec }}",
+              "type": "number"
+            },
+            {
+              "id": "6c0513f7-ccf9-499e-89ac-501102dc2ff5",
+              "name": "waittime",
+              "value": "={{ $('Filter').item.json.waittime }}",
+              "type": "string"
+            },
+            {
+              "id": "efe3d58d-b363-492c-9777-58d8c407e8c6",
+              "name": "recording",
+              "value": "={{ $('Filter').item.json.recording }}",
+              "type": "string"
+            },
+            {
+              "id": "b6043178-fa21-4547-85bd-e406ff630af4",
+              "name": "callTranscriptRU",
+              "value": "={{ $json.callTranscriptRU }}",
+              "type": "array"
+            },
+            {
+              "id": "e2721165-6471-4c66-8971-9fcac23a2c00",
+              "name": "callTranscriptUA",
+              "value": "={{ $json.callTranscriptUA }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3520,
+        208
+      ],
+      "id": "5bdf68a8-ab2f-4310-bc22-ae7d0a9928e4",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2336,
+        208
+      ],
+      "id": "5c52f304-ef7f-4172-92c5-a1e92c785896",
+      "name": "Wait1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2bd2bf43-51b4-4566-bdc3-7985afc59ee8",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2720,
+        0
+      ],
+      "id": "0f9060af-4980-4194-b70a-9459f73b489a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c1138a66-2620-4d2e-8806-b774c0062408",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2720,
+        208
+      ],
+      "id": "540ac7ca-da50-480c-abc5-bdc040d9a5b2",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Date & Time2').item.json.curDate }} calldata",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "dialogues"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        304,
+        80
+      ],
+      "id": "a5bde2f2-31ee-429a-b73b-20f90e15cb15",
+      "name": "Create CallData spreadsheet",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_CALLDATA_FOLDER_ID",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        80
+      ],
+      "id": "06b99ce6-52e2-4ced-b778-ad527d606960",
+      "name": "Move CallData spreadsheet"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ $('Date & Time2').item.json.curDate }} callfeedback",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "feedback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        736,
+        80
+      ],
+      "id": "c856b794-f8be-40bf-b744-da1af2d55d58",
+      "name": "Create CallFeedback spreadsheet",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_CALLFEEDBACK_FOLDER_ID",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        976,
+        80
+      ],
+      "id": "29d00bec-9f2c-4aa3-b23b-68ad4fb45ffd",
+      "name": "Move CallFeedback spreadsheet"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name === 'Split Out2' }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3488,
+        -496
+      ],
+      "id": "8a3e5a8d-b2c3-4272-a060-edc13869d198",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create CallData spreadsheet').item.json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Create CallData spreadsheet').item.json.sheets[0].properties.sheetId }}",
+          "mode": "id"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2096,
+        -560
+      ],
+      "id": "9b7d2bfe-8d5d-4d82-a03c-bc82542940d1",
+      "name": "Get row(s) in sheet",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "=data",
+        "include": "specifiedFields",
+        "fieldsToInclude": "row_number, callTranscriptRU, callTranscriptUA",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2528,
+        -560
+      ],
+      "id": "36c66c8e-3e68-4e16-b0d7-d864fc6b4d33",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4032,
+        -480
+      ],
+      "id": "5624044b-32b4-4d1a-abc2-4c33a95b1c5b",
+      "name": "Wait2"
+    },
+    {
+      "parameters": {
+        "batchSize": 20,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2304,
+        -560
+      ],
+      "id": "f0c5f3ed-26fb-4568-9a26-1d55af45343a",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"results\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"украинский_язык\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"допродажа\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"презентация_товара\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"уточнение_веса\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"финальная_сверка\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"данные_заказа\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"вежливость\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"альтернатива_при_отказе\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"оперативность\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"работа_с_недовольством\": {\n            \"type\": \"string\",\n            \"enum\": [\"да\", \"частично\", \"нет\", \"неприменимо\"]\n          },\n          \"контекст_покупателя\": {\n            \"type\": \"string\"\n          },\n          \"комментарий\": {\n            \"type\": \"string\"\n          },\n          \"transcript\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"украинский_язык\",\n          \"допродажа\",\n          \"презентация_товара\",\n          \"уточнение_веса\",\n          \"финальная_сверка\",\n          \"данные_заказа\",\n          \"вежливость\",\n          \"альтернатива_при_отказе\",\n          \"оперативность\",\n          \"работа_с_недовольством\",\n          \"контекст_покупателя\",\n          \"комментарий\",\n          \"transcript\"\n        ],\n        \"additionalProperties\": false\n      }\n    }\n  },\n  \"required\": [\"results\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        -336
+      ],
+      "id": "3c8b5eec-7ad9-4cbd-9f7e-8c68c4729681",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2992,
+        -560
+      ],
+      "id": "a73d48be-f8c5-4fe8-a0da-89958b88c73f",
+      "name": "Split Out2"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2848,
+        -176
+      ],
+      "id": "7608e007-2170-42ca-a28e-8cec6ee79fab",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "af8bc5ad-ef58-4f9f-814d-76db9286cf0e",
+              "name": "row_id",
+              "value": "={{ $('Loop Over Items').context.currentRunIndex }}",
+              "type": "number"
+            },
+            {
+              "id": "efe3d58d-b363-492c-9777-58d8c407e8c6",
+              "name": "recording",
+              "value": "={{ $('Filter').item.json.recording }}",
+              "type": "string"
+            },
+            {
+              "id": "1e3c2456-627e-486c-b33a-3ca6173f0b7f",
+              "name": "calldate",
+              "value": "={{ $('Filter').item.json.calldate }}",
+              "type": "string"
+            },
+            {
+              "id": "b51031a5-85a7-40f6-a9b0-1d3bb8b599b7",
+              "name": "employee_fio",
+              "value": "={{ $('Filter').item.json.employee_fio }}",
+              "type": "string"
+            },
+            {
+              "id": "4f468bd8-dc19-410c-ad3c-8c3b387f7442",
+              "name": "dst",
+              "value": "={{ $('Filter').item.json.dst }}",
+              "type": "string"
+            },
+            {
+              "id": "c05141cf-9fa5-4537-abd3-1626e9204e8b",
+              "name": "call_type",
+              "value": "={{ $('Filter').item.json.call_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3888,
+        208
+      ],
+      "id": "85b5339e-d84d-4e50-8f2c-8adb82e8ad88",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create CallFeedback spreadsheet').item.json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Create CallFeedback spreadsheet').item.json.sheets[0].properties.sheetId }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "recording",
+              "displayName": "recording",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calldate",
+              "displayName": "calldate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "employee_fio",
+              "displayName": "employee_fio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dst",
+              "displayName": "dst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "call_type",
+              "displayName": "call_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "украинский_язык",
+              "displayName": "украинский_язык",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "допродажа",
+              "displayName": "допродажа",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "презентация_товара",
+              "displayName": "презентация_товара",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "уточнение_веса",
+              "displayName": "уточнение_веса",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "финальная_сверка",
+              "displayName": "финальная_сверка",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "данные_заказа",
+              "displayName": "данные_заказа",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "вежливость",
+              "displayName": "вежливость",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "альтернатива_при_отказе",
+              "displayName": "альтернатива_при_отказе",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "оперативность",
+              "displayName": "оперативность",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "работа_с_недовольством",
+              "displayName": "работа_с_недовольством",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "контекст_покупателя",
+              "displayName": "контекст_покупателя",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "комментарий",
+              "displayName": "комментарий",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4064,
+        208
+      ],
+      "id": "b530b36e-c5c7-4eca-92f4-5f7220de8122",
+      "name": "Append row in sheet2"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Create CallFeedback spreadsheet').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Create CallFeedback spreadsheet').first().json.sheets[0].properties.sheetId }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "recording"
+          ],
+          "schema": [
+            {
+              "id": "recording",
+              "displayName": "recording",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "calldate",
+              "displayName": "calldate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "employee_fio",
+              "displayName": "employee_fio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dst",
+              "displayName": "dst",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "call_type",
+              "displayName": "call_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3856,
+        -480
+      ],
+      "id": "d13792e1-62c7-477a-9a04-fedc47dbc296",
+      "name": "Append or update row in sheet",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Date & Time1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a transcription1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time1": {
+      "main": [
+        [
+          {
+            "node": "Date & Time2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time2": {
+      "main": [
+        [
+          {
+            "node": "Create CallData spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a transcription": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get a transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a transcription": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a transcription1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a transcription1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Out2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get a transcription1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CallData spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Move CallData spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move CallData spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Create CallFeedback spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create CallFeedback spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Move CallFeedback spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move CallFeedback spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "name": "AI Sales Call Quality Analysis",
+  "active": false
+}
